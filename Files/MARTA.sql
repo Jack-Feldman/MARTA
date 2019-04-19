@@ -57,6 +57,159 @@ CREATE PROCEDURE s03_add_email(IN UName VARCHAR(50),
  INSERT INTO emails(Username,Email) VALUES (UName,EMail);
  END //
 DELIMITER ;
+		
+#CREATE SITE - PAGE 21
+#CreateSite adds a new site entry into site table
+
+DELIMITER //
+CREATE PROCEDURE CreateSite(IN Site VARCHAR(50), SiteAddr VARCHAR (100), Zip CHAR(5), OpenErrday ENUM('Yes','No'), Manager VARCHAR(50))
+BEGIN
+INSERT INTO site (Sitename, SiteAddress, SiteZipcode, OpenEveryday, ManagerUsername)
+VALUES (Site, SiteAddr, Zip, OpenErrday, Manager);
+END //
+DELIMITER; 
+
+#MANAGE TRANSIT - Page 22
+#DeleteTransit removes a transit entry from transit table
+
+DELIMITER 
+CREATE PROCEDURE DeleteTransit(IN TType ENUM('MARTA','Bus','Bike'), Route VARCHAR(20), Price DECIMAL(7,2))
+BEGIN
+DELETE FROM transit
+WHERE TransitType = TType and TransitRoute = Route;
+END //
+DELIMITER;
+
+DELIMITER
+CREATE PROCEDURE ConnectedSites(Route VARCHAR(20))
+BEGIN
+SELECT Count(*)
+FROM connect
+WHERE TransitRoute = Route;
+END //
+DELIMITER;
+
+DELIMITER
+CREATE PROCEDURE NumTransitLogged(Route VARCHAR(20))
+BEGIN
+SELECT COUNT(*) 
+FROM take
+WHERE TransitRoute = Route;
+END //
+DELIMITER;
+
+#EDIT EVENT - Page 23
+#RemoveSites removes all entries matching the entered route num
+#EditTransit re adds rows corresponding to the newly entered sites
+#EditPrice updates price if it is changed in transit table
+
+DELIMITER //
+CREATE PROCEDURE RemoveSites(IN Route VARCHAR(20))
+BEGIN
+DELETE FROM connect 
+WHERE connect.TransitRoute = Route;
+END //
+DELIMITER;
+
+DELIMITER //
+CREATE PROCEDURE EditTransit(IN Route VARCHAR(20), TType ENUM('MARTA','Bus','Bike'), Site_Name VARCHAR(20))
+BEGIN
+INSERT INTO connect (TransitType, TransitRoute, SiteName)
+VALUES (TType, Route, Site_Name);
+ END //
+DELIMITER;
+
+DELIMITER //
+CREATE PROCEDURE EditPrice(IN Price DECIMAL(7,2), Route VARCHAR(20))
+BEGIN
+UPDATE transit
+SET transit.TransitPrice = Price
+WHERE transit.TransitRoute = Route;
+END //
+DELIMITER;
+
+#CREATE TRANSIT - Page 24
+#CreateTransit creates a new transit entry in the transit table
+DELIMITER 
+CREATE PROCEDUTE CreateTransit(IN TType ENUM('MARTA','Bus','Bike'), Route VARCHAR(20), Price DECIMAL(7,2))
+BEGIN
+INSERT INTO transit(TransitType, TransitRoute, TransitPrice)
+VALUES (TType, Route, Price);
+END //
+DELIMITER;
+
+#~~Use EditTransit procedure above to add connected sites~~
+
+#MANAGE EVENT - Page 25
+#CreateEvent adds a new event to the event table
+#DeleteEvents deletes and event
+#Duration calculates the length of the event in days
+#TotalVisits return number of visits to that site
+#StaffCount returns number of staff assigned to site
+#Total revenue calculated by multiplying visits by price
+
+
+DELIMITER
+CREATE PROCEDURE DeleteEvent(IN Nombre VARCHAR(100), StartD Date, EndD Date)
+BEGIN
+DELETE FROM event
+WHERE EventName = Nombre and StartDate = StartD and Sitename = SName;
+END //
+DELIMITER;
+
+DELIMITER  //
+CREATE PROCEDURE Duration(IN StartD Date, EndD Date)
+BEGIN
+SELECT DATEDIFF(day, StartD, EndD) as DateDifference;
+END //
+DELIMITER;
+
+DELIMITER //
+CREATE PROCEDURE TotalVisits(IN Nombre VARCHAR(100))
+BEGIN
+SELECT COUNT(*) FROM visitevent
+WHERE EventName = Nombre;
+END //
+DELIMITER;
+
+DELIMITER //
+CREATE PROCEDURE StaffCount(IN Nombre VARCHAR(100), StartD Date)
+BEGIN
+SELECT COUNT(*)
+FROM staff_assignment
+WHERE EventName = Nombre and StartDate = StartD;
+END //
+DELIMITER; 
+
+#VIEW/EDIT EVENT - Page 26
+#RemoveStaff removes staff entry from staff_assignment table
+#AddStaff adds staff entry to staff_assignment table
+#UpdateDescription updates description in event table
+
+DELIMITER //
+CREATE PROCEDURE RemoveStaff(IN Nombre VARCHAR(100), StartD Date, EmployeeName VARCHAR(50))
+BEGIN
+DELETE FROM staff_assignment 
+WHERE EventName = Nombre and StartDate = StartD and EmployeeName = StaffUsername;
+END //
+DELIMITER; 
+
+DELIMITER //
+CREATE PROCEDURE AddStaff(IN Nombre VARCHAR(100), StartD Date, EmployeeName VARCHAR(50), Site VARCHAR(50))
+BEGIN
+INSERT INTO staff_assignment(StaffUsername, EventName, SiteName, StartDate)
+VALUES (EmployeeName, Nombre, Site, StartD);
+END //
+DELIMITER;
+
+DELIMITER //
+CREATE PROCEDURE UpdateDescription(IN Nombre VARCHAR(100), StartD Date, Site VARCHAR(50), Descr VARCHAR(1000))
+BEGIN
+UPDATE event
+SET Description = Descr
+WHERE EventName = Nombre and StartDate = StartD and SiteName = Site;
+END //
+DELIMITER;
 
 /*Page 31*/
 
@@ -168,6 +321,48 @@ CREATE PROCEDURE s34_log_event_visit(IN
  INSERT INTO visitevent(VisitorUsername,EventName,StartDate,SiteName,VisitEventDate) VALUES (Uname,EName,SDate,SName,VDate);
  END //
 DELIMITER ;
+	 
+#TRANSIT DETAIL - Page 36
+#TransitDetail gets the route, transit type, and price info
+#ConnectedSites gets num of connected sites
+#LogTransit logs a transit in transit table
+
+DELIMITER //
+CREATE PROCEDURE TransitDetail(In TType ENUM('MARTA','Bus','Bike'))
+BEGIN
+Select TransitType, TransitRoute, TransitPrice
+FROM transit
+WHERE TransitType = TType;
+END //
+DELIMITER;
+
+DELIMITER //
+CREATE PROCEDURE ConnectedSites(In Route VARCHAR(20))
+BEGIN
+SELECT COUNT(*)
+FROM connect
+WHERE TransitRoute = Route;
+END //
+DELIMITER;
+
+DELIMITER //
+CREATE PROCEDURE LogTransit(In TDate DATE, TType ENUM('MARTA','Bus','Bike'), Route VARCHAR(20), UserN VARCHAR(50))
+BEGIN
+INSERT INTO take (TransitDate, TransitType, TransitRoute, Username)
+VALUES (TDate, TType, Route, UserN);
+END //
+DELIMITER;
+
+#SITE DETAIL - Page 37
+#LogSiteVisit adds a log entry to visitsite table
+
+DELIMITER //
+CREATE PROCEDURE LogSiteVisit(IN VisitDate DATE, Nombre VARCHAR(50), Username VARCHAR(50))
+BEGIN
+INSERT INTO visitsite (VisitSiteDate, SiteName, VisitorUsername)
+VALUES (VisitDate, Nombre, Username);
+END //
+DELIMITER;
 
 
 /* page 15 - Explore transit if choice is NOT 'ALL' */
